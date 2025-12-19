@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="description" content="RP Victor - Poker Ranges">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/3b82f6/ffffff?text=V">
+    
+    <title>RP Victor</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        poker: {
+                            bg: '#0f172a',
+                            panel: '#1e293b',
+                            active: '#3b82f6',
+                            hover: '#334155',
+                            text: '#f1f5f9',
+                            muted: '#94a3b8'
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'slide-down': 'slideDown 0.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideDown: {
+                            '0%': { opacity: '0', transform: 'translateY(-10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Tap highlight removal for mobile */
+        * { -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="bg-poker-bg text-poker-text min-h-screen font-sans flex flex-col pb-24">
+
+    <!-- Contenedor Principal de Navegación -->
+    <main class="flex-1 w-full max-w-5xl mx-auto p-4 pt-8 flex flex-col gap-6">
+        
+        <!-- Contenedor de Pestañas Dinámicas -->
+        <div id="tabs-container" class="flex flex-col gap-4 w-full">
+            <!-- Las filas de pestañas se generan aquí -->
+        </div>
+
+        <!-- Visor de Imagen -->
+        <div id="image-viewer" class="hidden flex-col items-center justify-center p-2 animate-fade-in w-full">
+            <!-- Se inyecta la imagen aquí -->
+        </div>
+
+    </main>
+
+    <!-- Modal de Leyenda (Solo para Spins) -->
+    <div id="legend-overlay" class="hidden fixed bottom-4 right-4 z-40 transition-opacity opacity-90 hover:opacity-100 animate-fade-in">
+        <div class="bg-black/90 backdrop-blur border border-white/10 rounded-lg p-2 shadow-2xl max-w-[150px] md:max-w-[200px] relative">
+            <button onclick="document.getElementById('legend-overlay').classList.add('hidden')" class="absolute -top-2 -left-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md border border-white/20 hover:bg-red-600 transition-colors">&times;</button>
+            <img src="lLEYENDA SIN INCIATIVA.png" alt="Leyenda" class="w-full rounded h-auto">
+        </div>
+    </div>
+
+    <script>
+        // === FILE SYSTEM DATA ===
+        const fileSystem = {
+            "CASH-6max": {
+                "1 RFI": {
+                    "1.1 LJ.png": "CASH-6max/1 RFI/1.1 LJ.png",
+                    "1.2 HJ.png": "CASH-6max/1 RFI/1.2 HJ.png",
+                    "1.3 CO.png": "CASH-6max/1 RFI/1.3 CO.png",
+                    "1.4 BTN.png": "CASH-6max/1 RFI/1.4 BTN.png",
+                    "1.5 SB.png": "CASH-6max/1 RFI/1.5 SB.png"
+                },
+                "2 vsRFI": {
+                    "1 LF RFI": {
+                        "1 HJ.png": "CASH-6max/2 vsRFI/1 LF RFI/1 HJ.png",
+                        "2 CO.png": "CASH-6max/2 vsRFI/1 LF RFI/2 CO.png",
+                        "3 BTN.png": "CASH-6max/2 vsRFI/1 LF RFI/3 BTN.png",
+                        "4 SB.png": "CASH-6max/2 vsRFI/1 LF RFI/4 SB.png",
+                        "5 BB.png": "CASH-6max/2 vsRFI/1 LF RFI/5 BB.png"
+                    },
+                    "2 HJ RFI": {
+                        "1 CO.png": "CASH-6max/2 vsRFI/2 HJ RFI/1 CO.png",
+                        "2 BTN.png": "CASH-6max/2 vsRFI/2 HJ RFI/2 BTN.png",
+                        "3 SB.png": "CASH-6max/2 vsRFI/2 HJ RFI/3 SB.png",
+                        "4 BB.png": "CASH-6max/2 vsRFI/2 HJ RFI/4 BB.png"
+                    },
+                    "3 CO RFI": {
+                        "1 BTN.png": "CASH-6max/2 vsRFI/3 CO RFI/1 BTN.png",
+                        "2 SB.png": "CASH-6max/2 vsRFI/3 CO RFI/2 SB.png",
+                        "3 BB.png": "CASH-6max/2 vsRFI/3 CO RFI/3 BB.png"
+                    },
+                    "4 BTN RFI": {
+                        "1 SB.png": "CASH-6max/2 vsRFI/4 BTN RFI/1 SB.png",
+                        "2 BB.png": "CASH-6max/2 vsRFI/4 BTN RFI/2 BB.png"
+                    },
+                    "5 SB RFI": {
+                        "1 BB.png": "CASH-6max/2 vsRFI/5 SB RFI/1 BB.png"
+                    }
+                },
+                "3 vs3BET": {
+                    "1 HJ 3BET": {
+                        "1 LJ.png": "CASH-6max/3 vs3BET/1 HJ 3BET/1 LJ.png"
+                    },
+                    "2 CO 3BET": {
+                        "1 LJ.png": "CASH-6max/3 vs3BET/2 CO 3BET/1 LJ.png",
+                        "2 HJ.png": "CASH-6max/3 vs3BET/2 CO 3BET/2 HJ.png"
+                    },
+                    "3 BTN 3BET": {
+                        "1 LJ.png": "CASH-6max/3 vs3BET/3 BTN 3BET/1 LJ.png",
+                        "2 HJ.png": "CASH-6max/3 vs3BET/3 BTN 3BET/2 HJ.png",
+                        "3 CO.png": "CASH-6max/3 vs3BET/3 BTN 3BET/3 CO.png"
+                    },
+                    "4 SB 3BET": {
+                        "1 LJ.png": "CASH-6max/3 vs3BET/4 SB 3BET/1 LJ.png",
+                        "2 HJ.png": "CASH-6max/3 vs3BET/4 SB 3BET/2 HJ.png",
+                        "3 CO.png": "CASH-6max/3 vs3BET/4 SB 3BET/3 CO.png",
+                        "4 BTN.png": "CASH-6max/3 vs3BET/4 SB 3BET/4 BTN.png"
+                    },
+                    "5 BB 3BET": {
+                        "1 LJ.png": "CASH-6max/3 vs3BET/5 BB 3BET/1 LJ.png",
+                        "2 HJ.png": "CASH-6max/3 vs3BET/5 BB 3BET/2 HJ.png",
+                        "3 CO.png": "CASH-6max/3 vs3BET/5 BB 3BET/3 CO.png",
+                        "4 BTN.png": "CASH-6max/3 vs3BET/5 BB 3BET/4 BTN.png",
+                        "5 SB.png": "CASH-6max/3 vs3BET/5 BB 3BET/5 SB.png"
+                    }
+                },
+                "4 vs3BETcold": {
+                    "1 LJ RFI": {
+                        "1 HJ 3BET": {
+                            "1 CO.png": "CASH-6max/4 vs3BETcold/1 LJ RFI/1 HJ 3BET/1 CO.png",
+                            "2 BTN.png": "CASH-6max/4 vs3BETcold/1 LJ RFI/1 HJ 3BET/2 BTN.png",
+                            "3 SB.png": "CASH-6max/4 vs3BETcold/1 LJ RFI/1 HJ 3BET/3 SB.png",
+                            "4 BB.png": "CASH-6max/4 vs3BETcold/1 LJ RFI/1 HJ 3BET/4 BB.png"
+                        },
+                        "2 CO 3BET": {
+                            "1 BTN.png": "CASH-6max/4 vs3BETcold/1 LJ RFI/2 CO 3BET/1 BTN.png",
+                            "2 SB.png": "CASH-6max/4 vs3BETcold/1 LJ RFI/2 CO 3BET/2 SB.png",
+                            "3 BB.png": "CASH-6max/4 vs3BETcold/1 LJ RFI/2 CO 3BET/3 BB.png"
+                        },
+                        "3 BTN 3BET": {
+                            "1 SB.png": "CASH-6max/4 vs3BETcold/1 LJ RFI/3 BTN 3BET/1 SB.png",
+                            "2 BB.png": "CASH-6max/4 vs3BETcold/1 LJ RFI/3 BTN 3BET/2 BB.png"
+                        },
+                        "4 SB 3BET": {
+                            "1 BB.png": "CASH-6max/4 vs3BETcold/1 LJ RFI/4 SB 3BET/1 BB.png"
+                        }
+                    },
+                    "2 HJ RFI": {
+                        "1 CO 3BET": {
+                            "1 BTN.png": "CASH-6max/4 vs3BETcold/2 HJ RFI/1 CO 3BET/1 BTN.png",
+                            "2 SB.png": "CASH-6max/4 vs3BETcold/2 HJ RFI/1 CO 3BET/2 SB.png",
+                            "3 BB.png": "CASH-6max/4 vs3BETcold/2 HJ RFI/1 CO 3BET/3 BB.png"
+                        },
+                        "2 BTN 3BET": {
+                            "1 SB.png": "CASH-6max/4 vs3BETcold/2 HJ RFI/2 BTN 3BET/1 SB.png",
+                            "2 BB.png": "CASH-6max/4 vs3BETcold/2 HJ RFI/2 BTN 3BET/2 BB.png"
+                        },
+                        "3 SB 3BET": {
+                            "1 BB.png": "CASH-6max/4 vs3BETcold/2 HJ RFI/3 SB 3BET/1 BB.png"
+                        }
+                    },
+                    "3 CO RFI": {
+                        "1 BTN 3BET": {
+                            "1 SB.png": "CASH-6max/4 vs3BETcold/3 CO RFI/1 BTN 3BET/1 SB.png",
+                            "2 BB.png": "CASH-6max/4 vs3BETcold/3 CO RFI/1 BTN 3BET/2 BB.png"
+                        },
+                        "2 SB 3BET": {
+                            "1 BB.png": "CASH-6max/4 vs3BETcold/3 CO RFI/2 SB 3BET/1 BB.png"
+                        }
+                    },
+                    "4 BTN RFI": {
+                        "1 SB 3BET": {
+                            "1 BB.png": "CASH-6max/4 vs3BETcold/4 BTN RFI/1 SB 3BET/1 BB.png"
+                        }
+                    }
+                },
+                "5 vs4BET": {
+                    "2 HJ 4BET": {
+                        "1 CO.png": "CASH-6max/5 vs4BET/2 HJ 4BET/1 CO.png",
+                        "2 COvs100.png": "CASH-6max/5 vs4BET/2 HJ 4BET/2 COvs100.png",
+                        "3 BTN.png": "CASH-6max/5 vs4BET/2 HJ 4BET/3 BTN.png",
+                        "4 BTNvs100.png": "CASH-6max/5 vs4BET/2 HJ 4BET/4 BTNvs100.png",
+                        "5 SB.png": "CASH-6max/5 vs4BET/2 HJ 4BET/5 SB.png",
+                        "6 BB.png": "CASH-6max/5 vs4BET/2 HJ 4BET/6 BB.png",
+                        "7 BBvs100.png": "CASH-6max/5 vs4BET/2 HJ 4BET/7 BBvs100.png"
+                    },
+                    "3 CO 4BET": {
+                        "1 BTNvs18.png": "CASH-6max/5 vs4BET/3 CO 4BET/1 BTNvs18.png",
+                        "2 BTNvs100.png": "CASH-6max/5 vs4BET/3 CO 4BET/2 BTNvs100.png",
+                        "3 SB.png": "CASH-6max/5 vs4BET/3 CO 4BET/3 SB.png",
+                        "4 BB.png": "CASH-6max/5 vs4BET/3 CO 4BET/4 BB.png"
+                    },
+                    "4 BTN 4BET": {
+                        "1 SBvs25.png": "CASH-6max/5 vs4BET/4 BTN 4BET/1 SBvs25.png",
+                        "3 BBvs28.png": "CASH-6max/5 vs4BET/4 BTN 4BET/3 BBvs28.png",
+                        "4 BBvs100.png": "CASH-6max/5 vs4BET/4 BTN 4BET/4 BBvs100.png"
+                    },
+                    "5 SB 4BET": {
+                        "1 BB.png": "CASH-6max/5 vs4BET/5 SB 4BET/1 BB.png"
+                    }
+                }
+            },
+            "CASH-9max": {
+                "1. UTG1-Table.jpg": "CASH-9max/1. UTG1-Table.jpg",
+                "2. UTG2-Table.jpg": "CASH-9max/2. UTG2-Table.jpg",
+                "3. UTG-Table.jpg": "CASH-9max/3. UTG-Table.jpg",
+                "4. Lojack-Table.jpg": "CASH-9max/4. Lojack-Table.jpg",
+                "5. Hijack-Table.jpg": "CASH-9max/5. Hijack-Table.jpg",
+                "7. Button-Table.jpg": "CASH-9max/7. Button-Table.jpg",
+                "8. Cutoff-Table.jpg": "CASH-9max/8. Cutoff-Table.jpg",
+                "9. SmallBlind-Table.jpg": "CASH-9max/9. SmallBlind-Table.jpg"
+            },
+            "Spins": {
+                "3H - Fish": {
+                    "1.- BTN": {
+                        "1.1. 25-20 BB (low).png": "Spins/3H - Fish/1.- BTN/1.1. 25-20 BB (low bajo).png",
+                        "1.2. btn 25-20bb (high).png": "Spins/3H - Fish/1.- BTN/1.2. btn 25-20bb (low alto).png",
+                        "2. 20-15 BB.png": "Spins/3H - Fish/1.- BTN/2. 20-15 BB.png",
+                        "3. 15-12 BB.png": "Spins/3H - Fish/1.- BTN/3.  15-12 BB.png",
+                        "4. 12-10 BB.png": "Spins/3H - Fish/1.- BTN/4.  12-10 BB.png",
+                        "5. 10-8 BB.png": "Spins/3H - Fish/1.- BTN/5.  10-8 BB.png",
+                        "6. Bu Nash.png": "Spins/3H - Fish/1.- BTN/6.  Bu Nash.png"
+                    },
+                    "2.- SB VS BTN": {
+                        "1. 25 BB VS MR.png": "Spins/3H - Fish/2.- SB VS BTN/1.  25 BB VS MR.png",
+                        "2. 15 BB VS MR.png": "Spins/3H - Fish/2.- SB VS BTN/2.  15 BB VS MR.png",
+                        "3. 25 BB VS LIMP.png": "Spins/3H - Fish/2.- SB VS BTN/3.  25 BB VS LIMP.png",
+                        "4. 13 BB VS LIMP.png": "Spins/3H - Fish/2.- SB VS BTN/4.  13 BB VS LIMP.png",
+                        "SB vs BTN Nash.png": "Spins/3H - Fish/2.- SB VS BTN/SB vs BTN Nash.png"
+                    },
+                    "3.- SB VS BB": {
+                        "1. 25 BB.png": "Spins/3H - Fish/3.- SB VS BB/1.  25 BB.png",
+                        "2. 15 BB.png": "Spins/3H - Fish/3.- SB VS BB/2.  15 BB.png",
+                        "3. 10 BB.png": "Spins/3H - Fish/3.- SB VS BB/3.  10 BB.png",
+                        "4. 7 BB.png": "Spins/3H - Fish/3.- SB VS BB/4.  7 BB.png",
+                        "5. Nash.png": "Spins/3H - Fish/3.- SB VS BB/5.  Nash.png"
+                    },
+                    "4.- BB VS BTN": {
+                        "1. 25 BB.png": "Spins/3H - Fish/4.- BB VS BTN/1.  25 BB.png",
+                        "1.2. 25 BB x3.png": "Spins/3H - Fish/4.- BB VS BTN/1.2.  25 BB x3.png",
+                        "2. 15 BB.png": "Spins/3H - Fish/4.- BB VS BTN/2.  15 BB.png",
+                        "3. Nash vs BU.png": "Spins/3H - Fish/4.- BB VS BTN/3.  Nash vs BU.png",
+                        "4. Nash vs BU y SB.png": "Spins/3H - Fish/4.- BB VS BTN/4.  Nash vs BU y SB.png"
+                    },
+                    "5.- BB VS SB": {
+                        "1. 25 BB MR.png": "Spins/3H - Fish/5.- BB VS SB/1.  25 BB MR.png",
+                        "1.2. 25 BB x3.png": "Spins/3H - Fish/5.- BB VS SB/1.2.  25 BB x3.png",
+                        "2. 15 BB MR.png": "Spins/3H - Fish/5.- BB VS SB/2.  15 BB MR.png",
+                        "3. 10 BB MR.png": "Spins/3H - Fish/5.- BB VS SB/3.  10 BB MR.png",
+                        "4. 7 BB MR.png": "Spins/3H - Fish/5.- BB VS SB/4.  7 BB MR.png",
+                        "5. 25 BB LIMP.png": "Spins/3H - Fish/5.- BB VS SB/5.  25 BB LIMP.png",
+                        "6. 15 BB LIMP.png": "Spins/3H - Fish/5.- BB VS SB/6.  15 BB LIMP.png",
+                        "7. 10 BB LIMP.png": "Spins/3H - Fish/5.- BB VS SB/7.  10 BB LIMP.png",
+                        "8. 7 BB LIMP.png": "Spins/3H - Fish/5.- BB VS SB/8.  7 BB LIMP.png",
+                        "9. Nash.png": "Spins/3H - Fish/5.- BB VS SB/9.  Nash.png"
+                    },
+                    "6.- SQZ VS 2": {
+                        "SQZ 10BB LIMP.png": "Spins/3H - Fish/6.- SQZ VS 2/SQZ vs 2 LIMP 10BB 06.png",
+                        "SQZ 15BB LIMP.png": "Spins/3H - Fish/6.- SQZ VS 2/SQZ vs 2 LIMP 15BB 05.png",
+                        "SQZ 25BB LIMP.png": "Spins/3H - Fish/6.- SQZ VS 2/SQZ vs 2 LIMP 25BB 04.png",
+                        "SQZ 15bb.png": "Spins/3H - Fish/6.- SQZ VS 2/SQZ15bb 03.png",
+                        "SQZ 20bb.png": "Spins/3H - Fish/6.- SQZ VS 2/SQZ20bb 02.png",
+                        "SQZ 25bb.png": "Spins/3H - Fish/6.- SQZ VS 2/SQZ25bb 01.png"
+                    }
+                },
+                "3H - Reg": {
+                    "1.- BTN": {
+                        "1.1. 25-20 BB (low).png": "Spins/3H - Reg/1.- BTN/1.1. 25-20 BB (low bajo).png",
+                        "1.2. btn 25-20bb (high).png": "Spins/3H - Reg/1.- BTN/1.2. btn 25-20bb (low alto).png",
+                        "2. 20-15 BB.png": "Spins/3H - Reg/1.- BTN/2. 20-15 BB.png",
+                        "3. 15-12 BB.png": "Spins/3H - Reg/1.- BTN/3.  15-12 BB.png",
+                        "4. 12-10 BB.png": "Spins/3H - Reg/1.- BTN/4.  12-10 BB.png",
+                        "5. 10-8 BB.png": "Spins/3H - Reg/1.- BTN/5.  10-8 BB.png",
+                        "6. Bu Nash.png": "Spins/3H - Reg/1.- BTN/6.  Bu Nash.png"
+                    },
+                    "2.- SB": {
+                        "1. 27bb.png": "Spins/3H - Reg/2.- SB/1. 27bb.png",
+                        "2. 23bb.png": "Spins/3H - Reg/2.- SB/2. 23.png",
+                        "3. 19bb.png": "Spins/3H - Reg/2.- SB/3. 19.png",
+                        "4. 16bb.png": "Spins/3H - Reg/2.- SB/4. 16.png",
+                        "5. 13bb.png": "Spins/3H - Reg/2.- SB/5. 13.png",
+                        "6. 11bb.png": "Spins/3H - Reg/2.- SB/6. 11.png",
+                        "7. 9bb.png": "Spins/3H - Reg/2.- SB/7. 9 .png",
+                        "8. 7.5bb.png": "Spins/3H - Reg/2.- SB/8. 7.5.png",
+                        "9. 6bb.png": "Spins/3H - Reg/2.- SB/9. 6.png",
+                        "z10. 25BB SB VS BTN.png": "Spins/3H - Reg/2.- SB/z10. 25BB SB VS BTN REG.png"
+                    },
+                    "3.- BB": {
+                        "1. 27.png": "Spins/3H - Reg/3.- BB/1. 27.png",
+                        "1.2 27 vx x3.png": "Spins/3H - Reg/3.- BB/1.2 27 vx x3.png",
+                        "2. 23.png": "Spins/3H - Reg/3.- BB/2. 23.png",
+                        "2.2 23 vx x3.png": "Spins/3H - Reg/3.- BB/2.2 23 vx x3.png",
+                        "3. 19.png": "Spins/3H - Reg/3.- BB/3. 19.png",
+                        "3.2 19 vx x2.75.png": "Spins/3H - Reg/3.- BB/3.2 19 vx x2.75.png",
+                        "4. rol x4 27bb.png": "Spins/3H - Reg/3.- BB/4. rol x4 27bb.png",
+                        "5. rol x3.5 23bb.png": "Spins/3H - Reg/3.- BB/5. rol x3.5 23bb.png",
+                        "6. rol x3 19bb.png": "Spins/3H - Reg/3.- BB/6. rol x3 19bb.png",
+                        "7. 25BB BB VS BTN.png": "Spins/3H - Reg/3.- BB/7. 25BB BB VS BTN REG.png"
+                    },
+                    "4.- SQZ VS 2": {
+                        "SQZ 10BB LIMP.png": "Spins/3H - Reg/4.- SQZ VS 2/SQZ vs 2 LIMP 10BB 06.png",
+                        "SQZ 15BB LIMP.png": "Spins/3H - Reg/4.- SQZ VS 2/SQZ vs 2 LIMP 15BB 05.png",
+                        "SQZ 25BB LIMP.png": "Spins/3H - Reg/4.- SQZ VS 2/SQZ vs 2 LIMP 25BB 04.png",
+                        "SQZ 15bb.png": "Spins/3H - Reg/4.- SQZ VS 2/SQZ15bb 03.png",
+                        "SQZ 20bb.png": "Spins/3H - Reg/4.- SQZ VS 2/SQZ20bb 02.png",
+                        "SQZ 25bb.png": "Spins/3H - Reg/4.- SQZ VS 2/SQZ25bb 01.png"
+                    }
+                },
+                "HU - Fish": {
+                    "1.- SB Or": {
+                        "1. 25BB.png": "Spins/HU - Fish/1.- SB Or/1. 25BB.png",
+                        "2. 15BB.png": "Spins/HU - Fish/1.- SB Or/2. 15BB.png",
+                        "3. 10BB.png": "Spins/HU - Fish/1.- SB Or/3. 10BB.png",
+                        "4. 7BB.png": "Spins/HU - Fish/1.- SB Or/4. 7BB.png",
+                        "Nash 05.png": "Spins/HU - Fish/1.- SB Or/Nash 05.png"
+                    },
+                    "2.- BB vs Mr": {
+                        "1. 25BB.png": "Spins/HU - Fish/2.- BB vs Mr/1. 25BB.png",
+                        "2. 15BB.png": "Spins/HU - Fish/2.- BB vs Mr/2. 15BB.png",
+                        "3. 10BB.png": "Spins/HU - Fish/2.- BB vs Mr/3. 10BB.png",
+                        "4. 7BB.png": "Spins/HU - Fish/2.- BB vs Mr/4. 7BB.png",
+                        "Nash 05.png": "Spins/HU - Fish/2.- BB vs Mr/Nash 05.png"
+                    },
+                    "3.- BB vs Limp": {
+                        "1. 25BB.png": "Spins/HU - Fish/3.- BB vs Limp/1. 25BB.png",
+                        "2. 15BB.png": "Spins/HU - Fish/3.- BB vs Limp/2. 15BB.png",
+                        "3. 10BB.png": "Spins/HU - Fish/3.- BB vs Limp/3. 10BB.png",
+                        "4. 7BB.png": "Spins/HU - Fish/3.- BB vs Limp/4. 7BB.png",
+                        "Nash 05.png": "Spins/HU - Fish/3.- BB vs Limp/Nash 05.png"
+                    }
+                },
+                "HU - Reg": {
+                    "1 .- SB Or": {
+                        "1. 25bb.png": "Spins/HU - Reg/1 .- SB Or/1. 25bb.png",
+                        "2. 20bb.png": "Spins/HU - Reg/1 .- SB Or/2. 20bb.png",
+                        "3. 15.png": "Spins/HU - Reg/1 .- SB Or/3. 15.png",
+                        "4. 12.5bb.png": "Spins/HU - Reg/1 .- SB Or/4. 12.5bb.png",
+                        "5. 10bb.png": "Spins/HU - Reg/1 .- SB Or/5. 10bb.png",
+                        "6. 8bb.png": "Spins/HU - Reg/1 .- SB Or/6. 8bb.png",
+                        "7. 6bb.png": "Spins/HU - Reg/1 .- SB Or/7. 6bb.png"
+                    },
+                    "2.- BB vs Mr": {
+                        "1. 25 vs mr.png": "Spins/HU - Reg/2.- BB vs Mr/1. 25 vs mr.png",
+                        "2. 15 vs mr.png": "Spins/HU - Reg/2.- BB vs Mr/2. 15 vs mr.png",
+                        "3. 10 vs mr.png": "Spins/HU - Reg/2.- BB vs Mr/3. 10 vs mr.png"
+                    },
+                    "3.- BB vs Limp": {
+                        "1. 25 rol.png": "Spins/HU - Reg/3.- BB vs Limp/1. 25 rol las rojas polarizadas solo si foldean 88 .png",
+                        "2. 15 ROL.png": "Spins/HU - Reg/3.- BB vs Limp/2. 15 ROL.png",
+                        "3. 10 ROL.png": "Spins/HU - Reg/3.- BB vs Limp/3. 10 ROL.png"
+                    }
+                }
+            },
+            "Tournament": {
+                "10BB": {
+                    "1 RFI": { "placeholder.png": "Tournament/10BB/1 RFI/placeholder.png" },
+                    "2 vsRFI": { "placeholder.png": "Tournament/10BB/2 vsRFI/placeholder.png" },
+                    "3 SQZ": { "placeholder.png": "Tournament/10BB/3 SQZ/placeholder.png" },
+                    "4 vsL": { "placeholder.png": "Tournament/10BB/4 vsL/placeholder.png" },
+                    "5 vs3B": { "placeholder.png": "Tournament/10BB/5 vs3B/placeholder.png" },
+                    "6 vs3Bcold": { "placeholder.png": "Tournament/10BB/6 vs3Bcold/placeholder.png" },
+                    "7 vsSQZ": { "placeholder.png": "Tournament/10BB/7 vsSQZ/placeholder.png" },
+                    "8 vs4B": { "placeholder.png": "Tournament/10BB/8 vs4B/placeholder.png" },
+                    "9 vs4Bcold": { "placeholder.png": "Tournament/10BB/9 vs4Bcold/placeholder.png" },
+                    "10 vs5B": { "placeholder.png": "Tournament/10BB/10 vs5B/placeholder.png" }
+                },
+                "25BB": {
+                    "1 RFI": { "placeholder.png": "Tournament/25BB/1 RFI/placeholder.png" },
+                    "2 vsRFI": { "placeholder.png": "Tournament/25BB/2 vsRFI/placeholder.png" },
+                    "3 SQZ": { "placeholder.png": "Tournament/25BB/3 SQZ/placeholder.png" },
+                    "4 vsL": { "placeholder.png": "Tournament/25BB/4 vsL/placeholder.png" },
+                    "5 vs3B": { "placeholder.png": "Tournament/25BB/5 vs3B/placeholder.png" },
+                    "6 vs3Bcold": { "placeholder.png": "Tournament/25BB/6 vs3Bcold/placeholder.png" },
+                    "7 vsSQZ": { "placeholder.png": "Tournament/25BB/7 vsSQZ/placeholder.png" },
+                    "8 vs4B": { "placeholder.png": "Tournament/25BB/8 vs4B/placeholder.png" },
+                    "9 vs4Bcold": { "placeholder.png": "Tournament/25BB/9 vs4Bcold/placeholder.png" },
+                    "10 vs5B": { "placeholder.png": "Tournament/25BB/10 vs5B/placeholder.png" }
+                },
+                "50BB": {
+                    "1 RFI": { "placeholder.png": "Tournament/50BB/1 RFI/placeholder.png" },
+                    "2 vsRFI": { "placeholder.png": "Tournament/50BB/2 vsRFI/placeholder.png" },
+                    "3 SQZ": { "placeholder.png": "Tournament/50BB/3 SQZ/placeholder.png" },
+                    "4 vsL": { "placeholder.png": "Tournament/50BB/4 vsL/placeholder.png" },
+                    "5 vs3B": { "placeholder.png": "Tournament/50BB/5 vs3B/placeholder.png" },
+                    "6 vs3Bcold": { "placeholder.png": "Tournament/50BB/6 vs3Bcold/placeholder.png" },
+                    "7 vsSQZ": { "placeholder.png": "Tournament/50BB/7 vsSQZ/placeholder.png" },
+                    "8 vs4B": { "placeholder.png": "Tournament/50BB/8 vs4B/placeholder.png" },
+                    "9 vs4Bcold": { "placeholder.png": "Tournament/50BB/9 vs4Bcold/placeholder.png" },
+                    "10 vs5B": { "placeholder.png": "Tournament/50BB/10 vs5B/placeholder.png" }
+                }
+            }
+        };
+
+        // Estado
+        let currentPath = [];
+
+        // PWA Installer logic
+        let deferredPrompt;
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js').catch(() => {}));
+        }
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        // Inicialización
+        window.onload = () => {
+            renderAllTabs();
+        };
+
+        function resetView() {
+            currentPath = [];
+            renderAllTabs();
+            document.getElementById('legend-overlay').classList.add('hidden');
+            document.getElementById('image-viewer').classList.add('hidden');
+            document.getElementById('image-viewer').innerHTML = '';
+        }
+
+        function handleSelection(key, level) {
+            currentPath = currentPath.slice(0, level);
+            currentPath.push(key);
+            
+            const legend = document.getElementById('legend-overlay');
+            if (currentPath[0] === 'Spins') {
+                legend.classList.remove('hidden');
+            } else {
+                legend.classList.add('hidden');
+            }
+
+            renderAllTabs();
+        }
+
+        function cleanName(name) {
+            return name.replace(/\.(png|jpg|jpeg)$/i, '');
+        }
+
+        function renderAllTabs() {
+            const container = document.getElementById('tabs-container');
+            const legendOverlay = document.getElementById('legend-overlay');
+            const imageViewer = document.getElementById('image-viewer');
+
+            if (currentPath.length > 0 && currentPath[0] === 'Spins') {
+                legendOverlay.classList.remove('hidden');
+            } else {
+                legendOverlay.classList.add('hidden');
+            }
+
+            container.innerHTML = '';
+            imageViewer.innerHTML = '';
+            imageViewer.classList.add('hidden');
+
+            let dataPointer = fileSystem;
+            let level = 0;
+
+            renderTabRow(container, dataPointer, level);
+
+            for (const key of currentPath) {
+                if (dataPointer && typeof dataPointer === 'object' && key in dataPointer) {
+                    dataPointer = dataPointer[key];
+                    level++;
+                    
+                    if (typeof dataPointer === 'object') {
+                        renderTabRow(container, dataPointer, level);
+                    } else if (typeof dataPointer === 'string') {
+                        renderImageViewer(imageViewer, dataPointer);
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+
+        function renderTabRow(container, dataObj, level) {
+            const rowWrapper = document.createElement('div');
+            rowWrapper.className = "w-full overflow-x-auto no-scrollbar pb-2 animate-slide-down";
+            rowWrapper.style.animationDelay = `${level * 0.05}s`;
+
+            const flexContainer = document.createElement('div');
+            flexContainer.className = "flex gap-2 min-w-max px-1";
+
+            const keys = Object.keys(dataObj).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+            keys.forEach(key => {
+                const isSelected = currentPath[level] === key;
+                const isFolder = typeof dataObj[key] !== 'string';
+                
+                const btn = document.createElement('button');
+                
+                const baseClass = "px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap border";
+                const activeClass = "bg-poker-active text-white border-poker-active shadow-lg shadow-poker-active/20";
+                const inactiveClass = "bg-poker-panel text-poker-muted border-white/5 hover:text-white hover:bg-white/10";
+
+                btn.className = `${baseClass} ${isSelected ? activeClass : inactiveClass}`;
+                btn.textContent = cleanName(key);
+                
+                btn.onclick = () => handleSelection(key, level);
+                flexContainer.appendChild(btn);
+            });
+
+            rowWrapper.appendChild(flexContainer);
+            container.appendChild(rowWrapper);
+        }
+
+        function renderImageViewer(container, src) {
+            container.classList.remove('hidden');
+            container.classList.add('flex');
+            
+            container.innerHTML = `
+                <div class="relative w-full max-w-full flex justify-center bg-black/20 p-2 rounded-xl border border-white/5 shadow-2xl">
+                    <div class="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <button onclick="copiarRuta('${src}')" class="bg-black/60 hover:bg-black/90 text-white text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-full backdrop-blur border border-white/10 transition-colors shadow-xl">
+                            Copiar Ruta
+                        </button>
+                    </div>
+                    <img src="${src}" alt="Tabla Final" class="max-w-full max-h-[75vh] rounded-lg shadow-lg object-contain bg-[#0f172a]"
+                         onerror="this.parentElement.innerHTML='<div class=\\'text-center p-8 text-red-400 bg-red-500/10 rounded-lg border border-red-500/20\\'>Imagen no encontrada<br><span class=\\'text-xs opacity-50 block mt-2\\'>${src}</span></div>'">
+                </div>
+            `;
+            
+            setTimeout(() => {
+                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+
+        function copiarRuta(text) {
+            navigator.clipboard.writeText(text);
+        }
+    </script>
+</body>
+</html>
